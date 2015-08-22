@@ -35,9 +35,11 @@ let playerStream =
 
 let playerRender res =
     if gameModeStream.FirstAsync().Wait() = GameOn then
-        let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 500.0) % 2
-        let texture = if frame = 0 then res.textures.Item "monster_f1"
-                                   else res.textures.Item "monster_f2"
+        let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 2
+        let texture =  match frame with 
+                           | 0 -> res.textures.Item "monster_f1"
+                           | 1 -> res.textures.Item "monster_f2"
+                           | _ -> res.textures.Item ""
 
         match playerStream.FirstAsync().Wait() with
             | None -> ()
