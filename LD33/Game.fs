@@ -25,15 +25,26 @@ type Player =
       vy: float32;
     }
 
-let initialPlayerState = Some {x = 100.0f;
-                               y = 400.0f;
-                               vx = 0.0f;
-                               vy = 0.0f; }
+let initialPlayerState = {x = 100.0f;
+                          y = 400.0f;
+                          vx = 0.0f;
+                          vy = 0.0f; }
 
 let playerStream =
-    new BehaviorSubject<Player option>(None)
+    new BehaviorSubject<Player>(initialPlayerState)
 
-let playerRender res =
+RxNA.Input.gameTimeStream
+|> Observable.subscribe (fun time ->
+    let player = playerStream.Value
+    let newVY = if player.y > 400.0f && player.vy >= 0.0f then 0.0f
+                    else player.vy + 0.30f
+    let newY = player.y + newVY
+    playerStream.OnNext {player with y = newY;
+                                     vy = newVY;}
+    ) |> ignore
+
+RxNA.Renderer.renderStream
+|> Observable.subscribe (fun res -> 
     if gameModeStream.Value = GameOn then
         let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 2
         let texture =  match frame with 
@@ -41,12 +52,20 @@ let playerRender res =
                            | 1 -> res.textures.Item "monster_f2"
                            | _ -> res.textures.Item ""
 
-        match playerStream.Value with
-            | None -> ()
-            | Some player ->
-                res.spriteBatch.Draw(texture,
-                                     Vector2(player.x, player.y),
-                                     Color.White)
+        let player = playerStream.Value
+        res.spriteBatch.Draw(texture,
+                             Vector2(player.x, player.y),
+                             Color.White)) |> ignore
+
+RxNA.Input.keyDownStream
+|> Observable.filter (fun x -> gameModeStream.Value = GameOn)
+|> Observable.subscribe
+    (fun x -> match x with
+                  | Keys.Escape -> gameModeStream.OnNext MainMenuShown
+                  | Keys.Space -> 
+                        let player = playerStream.Value
+                        if player.y >= 400.0f then playerStream.OnNext {player with vy = -10.0f;}
+                  | _ -> ()) |> ignore  
 
 let startGame() =
     playerStream.OnNext(initialPlayerState)
@@ -69,9 +88,7 @@ type Game () as this =
         do graphics.PreferredBackBufferHeight <- 600
         do graphics.ApplyChanges()
 
-        gameModeStream.OnNext(MainMenuShown)
-
-        RxNA.Renderer.renderStream |> Observable.subscribe (fun res -> playerRender res) |> ignore
+        gameModeStream.OnNext(MainMenuShown)        
 
         RxNA.Input.keyDownStream
         |> Observable.filter (fun x -> gameModeStream.Value = MainMenuShown)
@@ -79,15 +96,7 @@ type Game () as this =
             (fun x -> match x with
                           | Keys.Escape -> this.Exit()
                           | Keys.Space -> startGame()
-                          | _ -> ()) |> ignore
-
-        RxNA.Input.keyDownStream
-        |> Observable.filter (fun x -> gameModeStream.Value = GameOn)
-        |> Observable.subscribe
-            (fun x -> match x with
-                          | Keys.Escape -> gameModeStream.OnNext MainMenuShown
-                          | Keys.Space -> ()
-                          | _ -> ()) |> ignore        
+                          | _ -> ()) |> ignore 
 
         RxNA.Input.keyDownStream
         |> Observable.filter (fun x -> gameModeStream.Value = GameOver)
@@ -95,7 +104,7 @@ type Game () as this =
             (fun x -> match x with
                           | Keys.Escape -> gameModeStream.OnNext MainMenuShown
                           | Keys.Space -> gameModeStream.OnNext MainMenuShown
-                          | _ -> ()) |> ignore        
+                          | _ -> ()) |> ignore
  
     override this.LoadContent() =
         renderResources <-
