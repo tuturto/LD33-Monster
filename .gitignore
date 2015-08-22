@@ -1,0 +1,15 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/MonoTemplate/v14/.suo
+/MonoTemplate/bin/Debug
+/MonoTemplate/obj/x86/Debug
+/MonoTemplate/Content
+/packages
+/MonoTemplate/obj/Debug
+/RxNA/bin/Debug
+/RxNA/obj/x86/Debug
+/.vs/LD33/v14/.suo
+/LD33/bin/Debug
+/LD33/obj/Debug
