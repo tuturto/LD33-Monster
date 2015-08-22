@@ -33,6 +33,8 @@ type Game () as this =
         do graphics.PreferredBackBufferHeight <- 600
         do graphics.ApplyChanges()
 
+        gameModeStream.OnNext MainMenuShown
+
         RxNA.Input.keyDownStream
         |> Observable.add
             (function | Keys.Escape -> this.Exit()
