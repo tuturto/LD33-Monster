@@ -37,10 +37,16 @@ RxNA.Input.gameTimeStream
 |> Observable.subscribe (fun time ->
     let player = playerStream.Value
     let newVY = if player.y > 400.0f && player.vy >= 0.0f then 0.0f
-                    else player.vy + 0.30f
+                    else player.vy + 12.5f * (float32)time.ElapsedGameTime.TotalSeconds
     let newY = player.y + newVY
+    let newVX =
+        if player.vx > 0.0f then player.vx - 1.0f * (float32)time.ElapsedGameTime.TotalSeconds
+            else player.vx + 1.0f * (float32)time.ElapsedGameTime.TotalSeconds
+    let newX = player.x + newVX * (float32)time.ElapsedGameTime.TotalSeconds * 50.5f
     playerStream.OnNext {player with y = newY;
-                                     vy = newVY;}
+                                     vy = newVY;
+                                     x = newX;
+                                     vx = newVX;}
     ) |> ignore
 
 RxNA.Renderer.renderStream
@@ -57,15 +63,21 @@ RxNA.Renderer.renderStream
                              Vector2(player.x, player.y),
                              Color.White)) |> ignore
 
-RxNA.Input.keyDownStream
+RxNA.Input.keysPressedStream
 |> Observable.filter (fun x -> gameModeStream.Value = GameOn)
 |> Observable.subscribe
-    (fun x -> match x with
-                  | Keys.Escape -> gameModeStream.OnNext MainMenuShown
-                  | Keys.Space -> 
-                        let player = playerStream.Value
-                        if player.y >= 400.0f then playerStream.OnNext {player with vy = -10.0f;}
-                  | _ -> ()) |> ignore  
+    (fun x -> if x.Contains Keys.Escape then 
+                    gameModeStream.OnNext MainMenuShown
+              if x.Contains Keys.Space then
+                    let player = playerStream.Value
+                    if player.y >= 400.0f then playerStream.OnNext {player with vy = -10.0f;}
+              if x.Contains Keys.Left then
+                    let player = playerStream.Value
+                    playerStream.OnNext {player with vx = -4.0f}
+              if x.Contains Keys.Right then
+                    let player = playerStream.Value
+                    playerStream.OnNext {player with vx = 4.0f})
+|> ignore  
 
 RxNA.Input.keyDownStream
 |> Observable.filter (fun x -> gameModeStream.Value = GameOver)
