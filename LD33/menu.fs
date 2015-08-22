@@ -25,5 +25,5 @@ let menuRender res =
                             Color.White)
 
 RxNA.Renderer.renderStream
-    |> Observable.subscribe (fun res -> menuRender res)
-    |> ignore
+|> Observable.subscribe (fun res -> menuRender res)
+|> ignore

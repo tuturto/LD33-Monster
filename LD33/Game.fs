@@ -74,19 +74,28 @@ type Game () as this =
         RxNA.Renderer.renderStream |> Observable.subscribe (fun res -> playerRender res) |> ignore
 
         RxNA.Input.keyDownStream
+        |> Observable.filter (fun x -> gameModeStream.Value = MainMenuShown)
         |> Observable.subscribe
-            (fun x -> match x with 
-                          | Keys.Escape -> 
-                                match gameModeStream.Value with
-                                    | MainMenuShown -> this.Exit()
-                                    | GameOn -> gameModeStream.OnNext(MainMenuShown)
-                                    | GameOver -> gameModeStream.OnNext(MainMenuShown)
-                          | Keys.Space ->
-                                match gameModeStream.Value with
-                                    | MainMenuShown -> startGame()
-                                    | GameOn -> () // Jump
-                                    | GameOver -> () // gameModeStream.OnNext(MainMenuShown)
+            (fun x -> match x with
+                          | Keys.Escape -> this.Exit()
+                          | Keys.Space -> startGame()
                           | _ -> ()) |> ignore
+
+        RxNA.Input.keyDownStream
+        |> Observable.filter (fun x -> gameModeStream.Value = GameOn)
+        |> Observable.subscribe
+            (fun x -> match x with
+                          | Keys.Escape -> gameModeStream.OnNext MainMenuShown
+                          | Keys.Space -> ()
+                          | _ -> ()) |> ignore        
+
+        RxNA.Input.keyDownStream
+        |> Observable.filter (fun x -> gameModeStream.Value = GameOver)
+        |> Observable.subscribe
+            (fun x -> match x with
+                          | Keys.Escape -> gameModeStream.OnNext MainMenuShown
+                          | Keys.Space -> gameModeStream.OnNext MainMenuShown
+                          | _ -> ()) |> ignore        
  
     override this.LoadContent() =
         renderResources <-
