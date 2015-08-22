@@ -18,12 +18,14 @@ open RxNA.Renderer
 
 open Menu
 
-type Player =
+type Mob =
     { x: float32;
       y: float32;
       vx: float32;
       vy: float32;
     }
+
+let R = System.Random()
 
 let initialPlayerState = {x = 100.0f;
                           y = 464.0f;
@@ -31,7 +33,10 @@ let initialPlayerState = {x = 100.0f;
                           vy = 0.0f; }
 
 let playerStream =
-    new BehaviorSubject<Player>(initialPlayerState)
+    new BehaviorSubject<Mob>(initialPlayerState)
+
+let fireStream =
+    new BehaviorSubject<Mob list>([])
 
 RxNA.Input.gameTimeStream
 |> Observable.subscribe (fun time ->
@@ -91,6 +96,42 @@ RxNA.Input.keyDownStream
                   | Keys.Escape -> gameModeStream.OnNext MainMenuShown
                   | Keys.Space -> gameModeStream.OnNext MainMenuShown
                   | _ -> ()) |> ignore
+
+
+
+gameModeStream
+|> Observable.filter (fun x -> x = GameOn)
+|> Observable.subscribe
+    (fun x -> fireStream.OnNext([{x=500.0f; y=350.0f; vx=10.0f; vy=0.0f}
+                                 {x=700.0f; y=300.0f; vx=10.0f; vy=0.0f}
+                                 {x=900.0f; y=300.0f; vx=10.0f; vy=0.0f}
+                                 {x=1100.0f; y=300.0f; vx=10.0f; vy=0.0f}])) |> ignore
+
+RxNA.Input.gameTimeStream
+|> Observable.filter (fun x -> gameModeStream.Value = GameOn)
+|> Observable.subscribe
+    (fun gameTime -> 
+        let fireSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
+        fireStream.OnNext (fireStream.Value |> List.map (fun fire -> {fire with x = if fire.x < -64.0f then 760.0f else fire.x - fire.vx * fireSpeed;
+                                                                                y = if fire.x < -64.0f then ((float32)(R.NextDouble()) * 100.0f + 250.0f) else fire.y;
+                                                                                vx = if fire.x < -64.0f then ((float32)(R.NextDouble()) * 10.0f + 5.0f) else fire.vx; }))) |> ignore
+
+RxNA.Renderer.renderStream
+|> Observable.filter (fun x -> gameModeStream.Value = GameOn)
+|> Observable.subscribe
+    (fun res ->
+        let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 4
+        let texture =  match frame with 
+                           | 0 -> res.textures.Item "flame_f1"
+                           | 1 -> res.textures.Item "flame_f2"
+                           | 2 -> res.textures.Item "flame_f3"
+                           | 3 -> res.textures.Item "flame_f4"
+                           | _ -> res.textures.Item ""
+
+        fireStream.Value |> List.iter (fun fire -> res.spriteBatch.Draw(texture,
+                                                                        Vector2(fire.x, fire.y),
+                                                                        Color.White))
+        ) |> ignore
 
 type Game () as this =
     inherit Microsoft.Xna.Framework.Game()
