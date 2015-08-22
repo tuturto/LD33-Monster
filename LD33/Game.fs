@@ -15,6 +15,8 @@ open FSharp.Control.Reactive
 open RxNA.Input
 open RxNA.Renderer
 
+open Menu
+
 type Game () as this =
     inherit Microsoft.Xna.Framework.Game()
  
@@ -35,12 +37,14 @@ type Game () as this =
         |> Observable.add
             (function | Keys.Escape -> this.Exit()
                       | _ -> ())
+
+        MainMenuInit |> ignore
  
     override this.LoadContent() =
         renderResources <-
             { graphics = this.GraphicsDevice;
               spriteBatch = new SpriteBatch(this.GraphicsDevice);
-              textures = Map.empty }
+              textures = Map.empty.Add("mainmenu", contentManager.Load<Texture2D>("mainmenu")) }
  
     override this.Update (gameTime) =
         RxNA.Input.mouseStateStream.OnNext(Mouse.GetState())

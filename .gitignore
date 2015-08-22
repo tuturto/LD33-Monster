@@ -13,3 +13,6 @@
 /.vs/LD33/v14/.suo
 /LD33/bin/Debug
 /LD33/obj/Debug
+/LD33/obj/Windows
+*.kra~
+/LD33/Content
