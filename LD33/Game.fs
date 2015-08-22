@@ -125,6 +125,7 @@ type Game () as this =
             { graphics = this.GraphicsDevice;
               spriteBatch = new SpriteBatch(this.GraphicsDevice);
               textures = Map.empty.Add("mainmenu", contentManager.Load<Texture2D>("mainmenu"))
+                                  .Add("background", contentManager.Load<Texture2D>("background"))
                                   .Add("monster_f1", contentManager.Load<Texture2D>("monster_f1"))
                                   .Add("monster_f2", contentManager.Load<Texture2D>("monster_f2"))
                                   .Add("monster_f3", contentManager.Load<Texture2D>("monster_f3"))

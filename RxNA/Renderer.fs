@@ -17,8 +17,8 @@ let renderStream =
     new Subject<RenderResources>()
  
 let render (res:RenderResources) =
-    res.graphics.Clear(Color.White)
-
+    let texture = res.textures.Item "background"
     res.spriteBatch.Begin()
+    res.spriteBatch.Draw(texture, Vector2(0.0f, 0.0f), Color.White)
     renderStream.OnNext(res)
     res.spriteBatch.End()
