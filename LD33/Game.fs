@@ -75,10 +75,6 @@ RxNA.Input.keyDownStream
                   | Keys.Space -> gameModeStream.OnNext MainMenuShown
                   | _ -> ()) |> ignore
 
-let startGame() =
-    playerStream.OnNext(initialPlayerState)
-    gameModeStream.OnNext(GameOn)
-
 type Game () as this =
     inherit Microsoft.Xna.Framework.Game()
  
@@ -103,7 +99,8 @@ type Game () as this =
         |> Observable.subscribe
             (fun x -> match x with
                           | Keys.Escape -> this.Exit()
-                          | Keys.Space -> startGame()
+                          | Keys.Space -> playerStream.OnNext(initialPlayerState)
+                                          gameModeStream.OnNext(GameOn)
                           | _ -> ()) |> ignore 
  
     override this.LoadContent() =
