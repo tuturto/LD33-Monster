@@ -11,6 +11,7 @@ open Microsoft.Xna.Framework.Input
 
 open System.Reactive.Subjects
 open FSharp.Control.Reactive
+open System.Reactive.Linq
 
 open RxNA.Input
 open RxNA.Renderer
@@ -37,7 +38,10 @@ type Game () as this =
 
         RxNA.Input.keyDownStream
         |> Observable.add
-            (function | Keys.Escape -> this.Exit()
+            (function | Keys.Escape -> match gameModeStream.FirstAsync().Wait() with
+                                           | MainMenuShown -> this.Exit()
+                                           | GameOn -> gameModeStream.OnNext MainMenuShown
+                                           | GameOver -> gameModeStream.OnNext MainMenuShown
                       | _ -> ())
 
         MainMenuInit |> ignore
@@ -46,7 +50,9 @@ type Game () as this =
         renderResources <-
             { graphics = this.GraphicsDevice;
               spriteBatch = new SpriteBatch(this.GraphicsDevice);
-              textures = Map.empty.Add("mainmenu", contentManager.Load<Texture2D>("mainmenu")) }
+              textures = Map.empty.Add("mainmenu", contentManager.Load<Texture2D>("mainmenu"))
+                                  .Add("monster_f1", contentManager.Load<Texture2D>("monster_f1"))
+                                  .Add("monster_f2", contentManager.Load<Texture2D>("monster_f2"))}
  
     override this.Update (gameTime) =
         RxNA.Input.mouseStateStream.OnNext(Mouse.GetState())
