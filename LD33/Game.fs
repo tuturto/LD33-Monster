@@ -128,7 +128,11 @@ type Game () as this =
                                   .Add("monster_f1", contentManager.Load<Texture2D>("monster_f1"))
                                   .Add("monster_f2", contentManager.Load<Texture2D>("monster_f2"))
                                   .Add("monster_f3", contentManager.Load<Texture2D>("monster_f3"))
-                                  .Add("monster_f4", contentManager.Load<Texture2D>("monster_f4"));
+                                  .Add("monster_f4", contentManager.Load<Texture2D>("monster_f4"))
+                                  .Add("flame_f1", contentManager.Load<Texture2D>("flame_f1"))
+                                  .Add("flame_f2", contentManager.Load<Texture2D>("flame_f2"))
+                                  .Add("flame_f3", contentManager.Load<Texture2D>("flame_f3"))
+                                  .Add("flame_f4", contentManager.Load<Texture2D>("flame_f4"));
               gameTime = null }
  
     override this.Update (gameTime) =
