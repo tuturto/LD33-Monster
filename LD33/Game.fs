@@ -67,6 +67,14 @@ RxNA.Input.keyDownStream
                         if player.y >= 400.0f then playerStream.OnNext {player with vy = -10.0f;}
                   | _ -> ()) |> ignore  
 
+RxNA.Input.keyDownStream
+|> Observable.filter (fun x -> gameModeStream.Value = GameOver)
+|> Observable.subscribe
+    (fun x -> match x with
+                  | Keys.Escape -> gameModeStream.OnNext MainMenuShown
+                  | Keys.Space -> gameModeStream.OnNext MainMenuShown
+                  | _ -> ()) |> ignore
+
 let startGame() =
     playerStream.OnNext(initialPlayerState)
     gameModeStream.OnNext(GameOn)
@@ -97,14 +105,6 @@ type Game () as this =
                           | Keys.Escape -> this.Exit()
                           | Keys.Space -> startGame()
                           | _ -> ()) |> ignore 
-
-        RxNA.Input.keyDownStream
-        |> Observable.filter (fun x -> gameModeStream.Value = GameOver)
-        |> Observable.subscribe
-            (fun x -> match x with
-                          | Keys.Escape -> gameModeStream.OnNext MainMenuShown
-                          | Keys.Space -> gameModeStream.OnNext MainMenuShown
-                          | _ -> ()) |> ignore
  
     override this.LoadContent() =
         renderResources <-
