@@ -17,16 +17,13 @@ type GameState =
 let gameModeStream =
     new BehaviorSubject<GameState>(GameOn)
 
-let menuRender res =
-    if gameModeStream.FirstAsync().Wait() = MainMenuShown then
-        let texture = res.textures.Item "mainmenu"
-        res.spriteBatch.Draw(texture,
-                             Vector2(0.0f, 0.0f),
-                             Color.White)
+let menuRender res = 
+    if gameModeStream.Value = MainMenuShown then
+       let texture = res.textures.Item "mainmenu"
+       res.spriteBatch.Draw(texture,
+                            Vector2(0.0f, 0.0f),
+                            Color.White)
 
-let MainMenuInit =
-    RxNA.Renderer.renderStream
-    |> Observable.subscribe (fun res ->
-        menuRender res)
+RxNA.Renderer.renderStream
+    |> Observable.subscribe (fun res -> menuRender res)
     |> ignore
-

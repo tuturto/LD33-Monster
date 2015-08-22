@@ -34,25 +34,23 @@ let playerStream =
     new BehaviorSubject<Player option>(None)
 
 let playerRender res =
-    if gameModeStream.FirstAsync().Wait() = GameOn then
+    if gameModeStream.Value = GameOn then
         let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 2
         let texture =  match frame with 
                            | 0 -> res.textures.Item "monster_f1"
                            | 1 -> res.textures.Item "monster_f2"
                            | _ -> res.textures.Item ""
 
-        match playerStream.FirstAsync().Wait() with
+        match playerStream.Value with
             | None -> ()
             | Some player ->
                 res.spriteBatch.Draw(texture,
                                      Vector2(player.x, player.y),
                                      Color.White)
 
-let startGame =
-    playerStream.OnNext initialPlayerState
-    gameModeStream.OnNext GameOn
-    RxNA.Renderer.renderStream |> Observable.subscribe (fun res ->
-                                                        playerRender res) |> ignore
+let startGame() =
+    playerStream.OnNext(initialPlayerState)
+    gameModeStream.OnNext(GameOn)
 
 type Game () as this =
     inherit Microsoft.Xna.Framework.Game()
@@ -71,22 +69,24 @@ type Game () as this =
         do graphics.PreferredBackBufferHeight <- 600
         do graphics.ApplyChanges()
 
-        gameModeStream.OnNext MainMenuShown
+        gameModeStream.OnNext(MainMenuShown)
+
+        RxNA.Renderer.renderStream |> Observable.subscribe (fun res -> playerRender res) |> ignore
 
         RxNA.Input.keyDownStream
-        |> Observable.add
-            (function | Keys.Escape -> 
-                            match gameModeStream.FirstAsync().Wait() with
-                                | MainMenuShown -> this.Exit()
-                                | GameOn -> gameModeStream.OnNext MainMenuShown
-                                | GameOver -> gameModeStream.OnNext MainMenuShown
-                      | Keys.Space ->
-                            match gameModeStream.FirstAsync().Wait() with
-                                | MainMenuShown -> startGame
-                                | _ -> ()
-                      | _ -> ())
-
-        MainMenuInit |> ignore
+        |> Observable.subscribe
+            (fun x -> match x with 
+                          | Keys.Escape -> 
+                                match gameModeStream.Value with
+                                    | MainMenuShown -> this.Exit()
+                                    | GameOn -> gameModeStream.OnNext(MainMenuShown)
+                                    | GameOver -> gameModeStream.OnNext(MainMenuShown)
+                          | Keys.Space ->
+                                match gameModeStream.Value with
+                                    | MainMenuShown -> startGame()
+                                    | GameOn -> () // Jump
+                                    | GameOver -> () // gameModeStream.OnNext(MainMenuShown)
+                          | _ -> ()) |> ignore
  
     override this.LoadContent() =
         renderResources <-
