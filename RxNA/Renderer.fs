@@ -17,7 +17,7 @@ let renderStream =
     new Subject<RenderResources>()
  
 let render (res:RenderResources) =
-    res.graphics.Clear(Color.Black)
+    res.graphics.Clear(Color.White)
 
     res.spriteBatch.Begin()
     renderStream.OnNext(res)

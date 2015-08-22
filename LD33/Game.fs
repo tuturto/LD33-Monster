@@ -55,10 +55,12 @@ RxNA.Input.gameTimeStream
 RxNA.Renderer.renderStream
 |> Observable.subscribe (fun res -> 
     if gameModeStream.Value = GameOn then
-        let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 2
+        let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 4
         let texture =  match frame with 
                            | 0 -> res.textures.Item "monster_f1"
                            | 1 -> res.textures.Item "monster_f2"
+                           | 2 -> res.textures.Item "monster_f3"
+                           | 3 -> res.textures.Item "monster_f4"
                            | _ -> res.textures.Item ""
 
         let player = playerStream.Value
@@ -124,7 +126,9 @@ type Game () as this =
               spriteBatch = new SpriteBatch(this.GraphicsDevice);
               textures = Map.empty.Add("mainmenu", contentManager.Load<Texture2D>("mainmenu"))
                                   .Add("monster_f1", contentManager.Load<Texture2D>("monster_f1"))
-                                  .Add("monster_f2", contentManager.Load<Texture2D>("monster_f2"));
+                                  .Add("monster_f2", contentManager.Load<Texture2D>("monster_f2"))
+                                  .Add("monster_f3", contentManager.Load<Texture2D>("monster_f3"))
+                                  .Add("monster_f4", contentManager.Load<Texture2D>("monster_f4"));
               gameTime = null }
  
     override this.Update (gameTime) =
