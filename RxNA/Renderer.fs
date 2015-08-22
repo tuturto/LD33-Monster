@@ -10,7 +10,8 @@ type TextureMap = Map<string, Texture2D>
 type RenderResources = {
     graphics: GraphicsDevice;
     spriteBatch: SpriteBatch;
-    textures: TextureMap }
+    textures: TextureMap;
+    gameTime: GameTime }
 
 let renderStream =
     new Subject<RenderResources>()
