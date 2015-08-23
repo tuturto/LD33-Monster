@@ -82,22 +82,6 @@ RxNA.Input.gameTimeStream
                                      vx = newVX;}
     ) |> ignore
 
-RxNA.Renderer.renderStream
-|> Observable.subscribe (fun res -> 
-    if gameModeStream.Value = GameOn then
-        let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 4
-        let texture =  match frame with 
-                           | 0 -> res.textures.Item "monster_f1"
-                           | 1 -> res.textures.Item "monster_f2"
-                           | 2 -> res.textures.Item "monster_f3"
-                           | 3 -> res.textures.Item "monster_f4"
-                           | _ -> res.textures.Item ""
-
-        let player = playerStream.Value
-        res.spriteBatch.Draw(texture,
-                             Vector2(player.x + 32.0f, player.y - 64.0f),
-                             Color.White)) |> ignore
-
 RxNA.Input.keysPressedStream
 |> Observable.filter (fun x -> gameModeStream.Value = GameOn)
 |> Observable.subscribe
@@ -158,17 +142,6 @@ RxNA.Input.gameTimeStream
                                                                                                                                  newFire()
                                                                            else {fire with x = fire.x - fire.vx * fireSpeed}))) |> ignore
 
-RxNA.Renderer.renderStream
-|> Observable.subscribe
-    (fun res ->
-        let score = List.ofArray <| scoreStream.Value.ToString(Globalization.CultureInfo.InvariantCulture).ToArray()
-        let scoreList = List.mapi (fun index (element:char) -> (index, element.ToString(Globalization.CultureInfo.InvariantCulture))) score
-        List.iter (fun item -> (match item with
-                                    | index, value -> res.spriteBatch.Draw(res.textures.Item value,
-                                                                           Vector2((float32)index*64.0f + 5.0f, 5.0f),
-                                                                           Color.White))) scoreList
-        ) |> ignore
-
 let isTreePastScreen (tree:Tree) =
     tree.x < -200.0f
 
@@ -185,6 +158,11 @@ RxNA.Input.gameTimeStream
         forestStream.OnNext (forestStream.Value |> List.map (fun tree -> if isTreePastScreen tree then newTree()
                                                                             else {tree with x = tree.x - tree.vx * forestSpeed}))) |> ignore
 
+scoreStream
+|> Observable.filter (fun x -> x > highScoreStream.Value)
+|> Observable.subscribeObserver highScoreStream
+|> ignore
+
 RxNA.Renderer.renderStream
 |> Observable.filter (fun x -> gameModeStream.Value = GameOn || gameModeStream.Value = GameOver)
 |> Observable.subscribe
@@ -192,11 +170,6 @@ RxNA.Renderer.renderStream
         List.iter (fun item -> res.spriteBatch.Draw(res.textures.Item item.texture ,
                                                     Vector2(item.x, item.y),
                                                     Color.White)) forestStream.Value) |> ignore
-
-scoreStream
-|> Observable.filter (fun x -> x > highScoreStream.Value)
-|> Observable.subscribeObserver highScoreStream
-|> ignore
 
 RxNA.Renderer.renderStream
 |> Observable.subscribe
@@ -207,6 +180,17 @@ RxNA.Renderer.renderStream
         List.iter (fun item -> (match item with
                                     | index, value -> res.spriteBatch.Draw(res.textures.Item value,
                                                                            Vector2((float32)index*64.0f + leftmost, 5.0f),
+                                                                           Color.White))) scoreList
+        ) |> ignore
+
+RxNA.Renderer.renderStream
+|> Observable.subscribe
+    (fun res ->
+        let score = List.ofArray <| scoreStream.Value.ToString(Globalization.CultureInfo.InvariantCulture).ToArray()
+        let scoreList = List.mapi (fun index (element:char) -> (index, element.ToString(Globalization.CultureInfo.InvariantCulture))) score
+        List.iter (fun item -> (match item with
+                                    | index, value -> res.spriteBatch.Draw(res.textures.Item value,
+                                                                           Vector2((float32)index*64.0f + 5.0f, 5.0f),
                                                                            Color.White))) scoreList
         ) |> ignore
 
@@ -226,6 +210,22 @@ RxNA.Renderer.renderStream
                                                                         Vector2(fire.x+32.0f, fire.y-64.0f),
                                                                         Color.White))
         ) |> ignore
+
+RxNA.Renderer.renderStream
+|> Observable.subscribe (fun res -> 
+    if gameModeStream.Value = GameOn then
+        let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 4
+        let texture =  match frame with 
+                           | 0 -> res.textures.Item "monster_f1"
+                           | 1 -> res.textures.Item "monster_f2"
+                           | 2 -> res.textures.Item "monster_f3"
+                           | 3 -> res.textures.Item "monster_f4"
+                           | _ -> res.textures.Item ""
+
+        let player = playerStream.Value
+        res.spriteBatch.Draw(texture,
+                             Vector2(player.x + 32.0f, player.y - 64.0f),
+                             Color.White)) |> ignore
 
 type Game () as this =
     inherit Microsoft.Xna.Framework.Game()
