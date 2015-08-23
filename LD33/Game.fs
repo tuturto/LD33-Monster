@@ -169,7 +169,7 @@ let newFire() =
       vy = 0.0f }
 
 RxNA.Input.gameTimeStream
-|> Observable.filter (fun x -> gameModeStream.Value = GameOn)
+|> Observable.filter (fun x -> gameModeStream.Value = GameOn || gameModeStream.Value = GameOver)
 |> Observable.subscribe
     (fun gameTime -> 
         let fireSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
@@ -272,7 +272,7 @@ gameOnRendering
                                                          Color.White)))
 |> ignore
 
-gameOnRendering
+gameRendering
 |> Observable.subscribe
     (fun res ->
         let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 4
@@ -332,6 +332,14 @@ gameOnRendering
                                  Vector2(p.x + 32.0f, p.y - 64.0f),
                                  Color.White))
 
+|> ignore
+
+gameOverRendering
+|> Observable.subscribe (fun res ->
+    let texture = res.textures.Item "game_over"
+    res.spriteBatch.Draw(texture,
+                         Vector2(0.0f, 0.0f),
+                         Color.White))
 |> ignore
 
 type Game () as this =
@@ -404,7 +412,8 @@ type Game () as this =
                                   .Add("shield_1", contentManager.Load<Texture2D>("shield_1"))
                                   .Add("shield_2", contentManager.Load<Texture2D>("shield_2"))
                                   .Add("shield_3", contentManager.Load<Texture2D>("shield_3"))
-                                  .Add("shield_4", contentManager.Load<Texture2D>("shield_4"));
+                                  .Add("shield_4", contentManager.Load<Texture2D>("shield_4"))
+                                  .Add("game_over", contentManager.Load<Texture2D>("game_over"));
               gameTime = null }
  
     override this.Update (gameTime) =
