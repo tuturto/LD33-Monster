@@ -63,6 +63,15 @@ let forestStream =
                                     {x=600.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
                                     {x=800.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};])
 
+let torcherStream =
+    new BehaviorSubject<Mob list>([{x=800.0f; y=464.0f; vx= 10.0f; vy=0.0f};
+                                   {x=750.0f; y=464.0f; vx= 11.0f; vy=0.0f};
+                                   {x=700.0f; y=464.0f; vx= 9.0f; vy=0.0f};
+                                   {x=650.0f; y=464.0f; vx= 12.0f; vy=0.0f};
+                                   {x=600.0f; y=464.0f; vx= 11.0f; vy=0.0f};
+                                   {x=800.0f; y=464.0f; vx= 10.0f; vy=0.0f};
+                                   {x=775.0f; y=464.0f; vx= 10.0f; vy=0.0f};])
+
 RxNA.Input.gameTimeStream
 |> Observable.subscribe (fun time ->
     let player = playerStream.Value
@@ -122,8 +131,8 @@ let intersecting x1 y1 x2 y2 =
     let dy = (y1-64.0f)-(y2-64.0f)
     dx*dx+dy*dy < 64.0f*64.0f
 
-let isFirePastScreen (fire:Mob) =
-    fire.x < -64.0f
+let isMobPastScreen (mob:Mob) =
+    mob.x < -64.0f
 
 let newFire() = 
     { x = 864.0f + (float32)(R.NextDouble()) * 800.0f;
@@ -137,7 +146,7 @@ RxNA.Input.gameTimeStream
     (fun gameTime -> 
         let fireSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
         let player = playerStream.Value
-        fireStream.OnNext (fireStream.Value |> List.map (fun fire -> if isFirePastScreen fire then newFire()
+        fireStream.OnNext (fireStream.Value |> List.map (fun fire -> if isMobPastScreen fire then newFire()
                                                                        else if intersecting fire.x fire.y player.x player.y then scoreStream.OnNext(scoreStream.Value + 1)
                                                                                                                                  newFire()
                                                                            else {fire with x = fire.x - fire.vx * fireSpeed}))) |> ignore
@@ -157,6 +166,21 @@ RxNA.Input.gameTimeStream
         let forestSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
         forestStream.OnNext (forestStream.Value |> List.map (fun tree -> if isTreePastScreen tree then newTree()
                                                                             else {tree with x = tree.x - tree.vx * forestSpeed}))) |> ignore
+
+let newTorcher() = 
+    { x = 864.0f + (float32)(R.NextDouble()) * 100.0f;
+      y = 464.0f;
+      vx = 8.0f + (float32)(R.NextDouble()) * 2.0f;
+      vy = 0.0f }
+
+RxNA.Input.gameTimeStream
+|> Observable.filter (fun x -> gameModeStream.Value = GameOn)
+|> Observable.subscribe
+    (fun gameTime -> 
+        let mobSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
+        let player = playerStream.Value
+        torcherStream.OnNext (torcherStream.Value |> List.map (fun mob -> if isMobPastScreen mob then newTorcher()
+                                                                           else {mob with x = mob.x - mob.vx * mobSpeed}))) |> ignore
 
 scoreStream
 |> Observable.filter (fun x -> x > highScoreStream.Value)
@@ -210,6 +234,21 @@ RxNA.Renderer.renderStream
                                                                         Vector2(fire.x+32.0f, fire.y-64.0f),
                                                                         Color.White))
         ) |> ignore
+
+RxNA.Renderer.renderStream
+|> Observable.subscribe (fun res -> 
+    if gameModeStream.Value = GameOn || gameModeStream.Value = GameOver then
+        let frame = int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 4
+        let texture =  match frame with 
+                           | 0 -> res.textures.Item "torcher_1"
+                           | 1 -> res.textures.Item "torcher_2"
+                           | 2 -> res.textures.Item "torcher_3"
+                           | 3 -> res.textures.Item "torcher_4"
+                           | _ -> res.textures.Item ""
+
+        torcherStream.Value |> List.iter (fun item -> res.spriteBatch.Draw(texture,
+                                                                           Vector2(item.x+32.0f, item.y-64.0f),
+                                                                           Color.White))) |> ignore
 
 RxNA.Renderer.renderStream
 |> Observable.subscribe (fun res -> 
