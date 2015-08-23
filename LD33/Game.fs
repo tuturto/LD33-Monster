@@ -392,7 +392,11 @@ type Game () as this =
                                   .Add("torcher_1", contentManager.Load<Texture2D>("torcher_1"))
                                   .Add("torcher_2", contentManager.Load<Texture2D>("torcher_2"))
                                   .Add("torcher_3", contentManager.Load<Texture2D>("torcher_3"))
-                                  .Add("torcher_4", contentManager.Load<Texture2D>("torcher_4"));
+                                  .Add("torcher_4", contentManager.Load<Texture2D>("torcher_4"))
+                                  .Add("shield_1", contentManager.Load<Texture2D>("shield_1"))
+                                  .Add("shield_2", contentManager.Load<Texture2D>("shield_2"))
+                                  .Add("shield_3", contentManager.Load<Texture2D>("shield_3"))
+                                  .Add("shield_4", contentManager.Load<Texture2D>("shield_4"));
               gameTime = null }
  
     override this.Update (gameTime) =
