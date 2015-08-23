@@ -287,7 +287,11 @@ type Game () as this =
                                   .Add("forest_5", contentManager.Load<Texture2D>("forest_5"))
                                   .Add("forest_6", contentManager.Load<Texture2D>("forest_6"))
                                   .Add("forest_7", contentManager.Load<Texture2D>("forest_7"))
-                                  .Add("forest_8", contentManager.Load<Texture2D>("forest_8"));
+                                  .Add("forest_8", contentManager.Load<Texture2D>("forest_8"))
+                                  .Add("torcher_1", contentManager.Load<Texture2D>("torcher_1"))
+                                  .Add("torcher_2", contentManager.Load<Texture2D>("torcher_2"))
+                                  .Add("torcher_3", contentManager.Load<Texture2D>("torcher_3"))
+                                  .Add("torcher_4", contentManager.Load<Texture2D>("torcher_4"));
               gameTime = null }
  
     override this.Update (gameTime) =
