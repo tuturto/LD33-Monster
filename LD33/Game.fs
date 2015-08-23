@@ -96,8 +96,12 @@ RxNA.Input.gameTimeStream
             else if player.x + newVX * (float32)time.ElapsedGameTime.TotalSeconds * 50.5f > 704.0f then 704.0f
                 else player.x + newVX * (float32)time.ElapsedGameTime.TotalSeconds * 50.5f
     match playerStream.Value with
-                     | Invisible (t, p) -> playerStream.OnNext <| Invisible (t, {player with y = newY; vy = newVY; x = newX; vx = newVX;})
-                     | Normal p -> playerStream.OnNext <| Normal {player with y = newY; vy = newVY; x = newX; vx = newVX;})
+                     | Invisible (t, p) ->
+                        let t' = t - (int)time.ElapsedGameTime.TotalMilliseconds
+                        if t' <= 0 then playerStream.OnNext <| Normal {player with y = newY; vy = newVY; x = newX; vx = newVX;}
+                            else playerStream.OnNext <| Invisible (t', {player with y = newY; vy = newVY; x = newX; vx = newVX;})
+                     | Normal p ->
+                        playerStream.OnNext <| Normal {player with y = newY; vy = newVY; x = newX; vx = newVX;})
 |> ignore
 
 let setJumpOn player =
@@ -263,9 +267,9 @@ gameOnRendering
 |> Observable.subscribe
     (fun res ->
         let credits = creditsStream.Value
-        for i in [0..credits] do (res.spriteBatch.Draw(res.textures.Item "monster_f1",
-                                                       Vector2((float32)i * 64.0f + 5.0f, 64.0f),
-                                                       Color.White)))
+        for i in [0..credits-1] do (res.spriteBatch.Draw(res.textures.Item "monster_f1",
+                                                         Vector2((float32)i * 64.0f + 5.0f, 64.0f),
+                                                         Color.White)))
 |> ignore
 
 gameOnRendering
@@ -309,12 +313,17 @@ gameOnRendering
                        | 3 -> res.textures.Item "monster_f4"
                        | _ -> res.textures.Item ""
 
-    let player = match playerStream.Value with
-                     | Invisible (_, p) -> p
-                     | Normal p -> p
-    res.spriteBatch.Draw(texture,
-                         Vector2(player.x + 32.0f, player.y - 64.0f),
-                         Color.White))
+    match playerStream.Value with
+        | Invisible (t, p) -> 
+            if int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 2 = 0 then
+                res.spriteBatch.Draw(texture,
+                                     Vector2(p.x + 32.0f, p.y - 64.0f),
+                                     Color.White)
+        | Normal p -> 
+            res.spriteBatch.Draw(texture,
+                                 Vector2(p.x + 32.0f, p.y - 64.0f),
+                                 Color.White))
+
 |> ignore
 
 type Game () as this =
