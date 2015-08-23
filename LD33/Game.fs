@@ -79,8 +79,8 @@ RxNA.Input.gameTimeStream
                     else player.vy + 12.5f * (float32)time.ElapsedGameTime.TotalSeconds
     let newY = player.y + newVY
     let newVX =
-        if player.vx > 0.0f then player.vx - 1.0f * (float32)time.ElapsedGameTime.TotalSeconds
-            else player.vx + 1.0f * (float32)time.ElapsedGameTime.TotalSeconds
+        if player.vx > 0.0f then player.vx - 4.0f * (float32)time.ElapsedGameTime.TotalSeconds
+            else player.vx + 4.0f * (float32)time.ElapsedGameTime.TotalSeconds
     let newX = 
         if player.x + newVX * (float32)time.ElapsedGameTime.TotalSeconds * 50.5f < -32.0f then -32.0f
             else if player.x + newVX * (float32)time.ElapsedGameTime.TotalSeconds * 50.5f > 704.0f then 704.0f
@@ -98,7 +98,7 @@ RxNA.Input.keysPressedStream
                     gameModeStream.OnNext MainMenuShown
               if x.Contains Keys.Space then
                     let player = playerStream.Value
-                    if player.y >= 400.0f then playerStream.OnNext {player with vy = -10.0f;}
+                    if player.y >= 464.0f then playerStream.OnNext {player with vy = -10.0f;}
               if x.Contains Keys.Left then
                     let player = playerStream.Value
                     playerStream.OnNext {player with vx = -4.0f}
