@@ -63,13 +63,15 @@ let forestStream =
                                     {x=600.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
                                     {x=800.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};])
 
+let initialTorchers = [{x=800.0f; y=464.0f; vx= 10.0f; vy=0.0f};
+                       {x=750.0f; y=464.0f; vx= 11.0f; vy=0.0f};
+                       {x=700.0f; y=464.0f; vx= 9.0f; vy=0.0f};
+                       {x=650.0f; y=464.0f; vx= 12.0f; vy=0.0f};
+                       {x=600.0f; y=464.0f; vx= 11.0f; vy=0.0f};
+                       {x=800.0f; y=464.0f; vx= 10.0f; vy=0.0f};]
+
 let torcherStream =
-    new BehaviorSubject<Mob list>([{x=800.0f; y=464.0f; vx= 10.0f; vy=0.0f};
-                                   {x=750.0f; y=464.0f; vx= 11.0f; vy=0.0f};
-                                   {x=700.0f; y=464.0f; vx= 9.0f; vy=0.0f};
-                                   {x=650.0f; y=464.0f; vx= 12.0f; vy=0.0f};
-                                   {x=600.0f; y=464.0f; vx= 11.0f; vy=0.0f};
-                                   {x=800.0f; y=464.0f; vx= 10.0f; vy=0.0f};])
+    new BehaviorSubject<Mob list>(initialTorchers)
 
 RxNA.Input.gameTimeStream
 |> Observable.subscribe (fun time ->
@@ -125,10 +127,10 @@ gameModeStream
                                  {x=900.0f; y=250.0f; vx=10.0f; vy=0.0f}
                                  {x=1100.0f; y=200.0f; vx=10.0f; vy=0.0f}])) |> ignore
 
-let intersecting x1 y1 x2 y2 =
+let intersecting x1 y1 x2 y2 distance =
     let dx = (x1+32.f)-(x2+32.f)
     let dy = (y1-64.0f)-(y2-64.0f)
-    dx*dx+dy*dy < 64.0f*64.0f
+    dx*dx+dy*dy < distance*distance
 
 let isMobPastScreen (mob:Mob) =
     mob.x < -64.0f
@@ -146,8 +148,8 @@ RxNA.Input.gameTimeStream
         let fireSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
         let player = playerStream.Value
         fireStream.OnNext (fireStream.Value |> List.map (fun fire -> if isMobPastScreen fire then newFire()
-                                                                       else if intersecting fire.x fire.y player.x player.y then scoreStream.OnNext(scoreStream.Value + 1)
-                                                                                                                                 newFire()
+                                                                       else if intersecting fire.x fire.y player.x player.y 64.0f then scoreStream.OnNext(scoreStream.Value + 1)
+                                                                                                                                       newFire()
                                                                            else {fire with x = fire.x - fire.vx * fireSpeed}))) |> ignore
 
 let isTreePastScreen (tree:Tree) =
@@ -173,13 +175,14 @@ let newTorcher() =
       vy = 0.0f }
 
 RxNA.Input.gameTimeStream
-|> Observable.filter (fun x -> gameModeStream.Value = GameOn)
+|> Observable.filter (fun x -> gameModeStream.Value = GameOn || gameModeStream.Value = GameOver)
 |> Observable.subscribe
     (fun gameTime -> 
         let mobSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
         let player = playerStream.Value
         torcherStream.OnNext (torcherStream.Value |> List.map (fun mob -> if isMobPastScreen mob then newTorcher()
-                                                                           else {mob with x = mob.x - mob.vx * mobSpeed}))) |> ignore
+                                                                           else {mob with x = mob.x - mob.vx * mobSpeed}))
+        torcherStream.Value |> List.iter (fun mob -> if intersecting player.x player.y mob.x mob.y 25.0f then gameModeStream.OnNext GameOver)) |> ignore
 
 scoreStream
 |> Observable.filter (fun x -> x > highScoreStream.Value)
@@ -289,9 +292,10 @@ type Game () as this =
         |> Observable.subscribe
             (fun x -> match x with
                           | Keys.Escape -> this.Exit()
-                          | Keys.Space -> playerStream.OnNext(initialPlayerState)
-                                          scoreStream.OnNext(0)
-                                          gameModeStream.OnNext(GameOn)
+                          | Keys.Space -> playerStream.OnNext initialPlayerState
+                                          torcherStream.OnNext initialTorchers
+                                          scoreStream.OnNext 0
+                                          gameModeStream.OnNext GameOn
                           | _ -> ()) |> ignore 
  
     override this.LoadContent() =
