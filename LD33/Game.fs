@@ -42,6 +42,9 @@ let fireStream =
 let scoreStream = 
     new BehaviorSubject<int>(0)
 
+let highScoreStream = 
+    new BehaviorSubject<int>(0)
+
 RxNA.Input.gameTimeStream
 |> Observable.subscribe (fun time ->
     let player = playerStream.Value
@@ -141,11 +144,28 @@ RxNA.Renderer.renderStream
 |> Observable.subscribe
     (fun res ->
         let score = List.ofArray <| scoreStream.Value.ToString(Globalization.CultureInfo.InvariantCulture).ToArray()
-        let foo = List.mapi (fun index (element:char) -> (index, element.ToString(Globalization.CultureInfo.InvariantCulture))) score
+        let scoreList = List.mapi (fun index (element:char) -> (index, element.ToString(Globalization.CultureInfo.InvariantCulture))) score
         List.iter (fun item -> (match item with
                                     | index, value -> res.spriteBatch.Draw(res.textures.Item value,
-                                                                           Vector2((float32)index*64.0f, 0.0f),
-                                                                           Color.White))) foo
+                                                                           Vector2((float32)index*64.0f + 5.0f, 5.0f),
+                                                                           Color.White))) scoreList
+        ) |> ignore
+
+scoreStream
+|> Observable.filter (fun x -> x > highScoreStream.Value)
+|> Observable.subscribeObserver highScoreStream
+|> ignore
+
+RxNA.Renderer.renderStream
+|> Observable.subscribe
+    (fun res ->
+        let score = List.ofArray <| highScoreStream.Value.ToString(Globalization.CultureInfo.InvariantCulture).ToArray()
+        let scoreList = List.mapi (fun index (element:char) -> (index, element.ToString(Globalization.CultureInfo.InvariantCulture))) score
+        let leftmost = 795.0f - (float32)(score.Length * 64)
+        List.iter (fun item -> (match item with
+                                    | index, value -> res.spriteBatch.Draw(res.textures.Item value,
+                                                                           Vector2((float32)index*64.0f + leftmost, 5.0f),
+                                                                           Color.White))) scoreList
         ) |> ignore
 
 RxNA.Renderer.renderStream
