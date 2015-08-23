@@ -26,6 +26,12 @@ type Mob =
       vy: float32;
     }
 
+type Tree =
+    { texture: string;
+      x: float32;
+      vx: float32;
+      y: float32 }
+
 let R = System.Random()
 
 let initialPlayerState = {x = 100.0f;
@@ -44,6 +50,18 @@ let scoreStream =
 
 let highScoreStream = 
     new BehaviorSubject<int>(0)
+
+let forestTextures = ["forest_1"; "forest_2"; "forest_3"; "forest_4"; "forest_5"; "forest_6"; "forest_7"; "forest_8"]
+
+let randomTextureName textures =
+    textures |> List.item (R.Next textures.Length)
+
+let forestStream =
+    new BehaviorSubject<Tree list>([{x=0.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
+                                    {x=200.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
+                                    {x=400.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
+                                    {x=600.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
+                                    {x=800.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};])
 
 RxNA.Input.gameTimeStream
 |> Observable.subscribe (fun time ->
@@ -120,7 +138,7 @@ let intersecting x1 y1 x2 y2 =
     let dy = (y1-64.0f)-(y2-64.0f)
     dx*dx+dy*dy < 64.0f*64.0f
 
-let isFirePastScreen fire =
+let isFirePastScreen (fire:Mob) =
     fire.x < -64.0f
 
 let newFire() = 
@@ -150,6 +168,30 @@ RxNA.Renderer.renderStream
                                                                            Vector2((float32)index*64.0f + 5.0f, 5.0f),
                                                                            Color.White))) scoreList
         ) |> ignore
+
+let isTreePastScreen (tree:Tree) =
+    tree.x < -200.0f
+
+let newTree() =
+    { x = 800.0f;
+      y = 100.0f;
+      vx = 8.0f;
+      texture = randomTextureName forestTextures; }
+
+RxNA.Input.gameTimeStream
+|> Observable.subscribe
+    (fun gameTime ->
+        let forestSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
+        forestStream.OnNext (forestStream.Value |> List.map (fun tree -> if isTreePastScreen tree then newTree()
+                                                                            else {tree with x = tree.x - tree.vx * forestSpeed}))) |> ignore
+
+RxNA.Renderer.renderStream
+|> Observable.filter (fun x -> gameModeStream.Value = GameOn || gameModeStream.Value = GameOver)
+|> Observable.subscribe
+    (fun res ->
+        List.iter (fun item -> res.spriteBatch.Draw(res.textures.Item item.texture ,
+                                                    Vector2(item.x, item.y),
+                                                    Color.White)) forestStream.Value) |> ignore
 
 scoreStream
 |> Observable.filter (fun x -> x > highScoreStream.Value)
