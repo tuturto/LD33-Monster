@@ -38,7 +38,7 @@ type PlayerState =
     | Invisible of int * Mob
     | Normal of Mob
 
-let initialPlayerState = Invisible(2000, {x = 100.0f;
+let initialPlayerState = Invisible(3000, {x = 100.0f;
                                           y = 464.0f;
                                           vx = 0.0f;
                                           vy = 0.0f; })
@@ -216,7 +216,7 @@ RxNA.Input.gameTimeStream
                                                          | Invisible _ -> ()
                                                          | Normal player -> if intersecting player.x player.y mob.x mob.y 25.0f
                                                                                 then creditsStream.OnNext <| creditsStream.Value - 1
-                                                                                     if creditsStream.Value = 0 then gameModeStream.OnNext GameOver
+                                                                                     if creditsStream.Value < 0 then gameModeStream.OnNext GameOver
                                                                                         else playerStream.OnNext initialPlayerState))
 |> ignore
 
@@ -315,10 +315,18 @@ gameOnRendering
 
     match playerStream.Value with
         | Invisible (t, p) -> 
-            if int(res.gameTime.TotalGameTime.TotalMilliseconds / 250.0) % 2 = 0 then
-                res.spriteBatch.Draw(texture,
-                                     Vector2(p.x + 32.0f, p.y - 64.0f),
-                                     Color.White)
+            let shield =  match frame with 
+                              | 0 -> res.textures.Item "shield_1"
+                              | 1 -> res.textures.Item "shield_2"
+                              | 2 -> res.textures.Item "shield_3"
+                              | 3 -> res.textures.Item "shield_4"
+                              | _ -> res.textures.Item ""
+            res.spriteBatch.Draw(texture,
+                                 Vector2(p.x + 32.0f, p.y - 64.0f),
+                                 Color.White)
+            res.spriteBatch.Draw(shield,
+                                 Vector2(p.x + 32.0f, p.y - 64.0f),
+                                 Color.White)
         | Normal p -> 
             res.spriteBatch.Draw(texture,
                                  Vector2(p.x + 32.0f, p.y - 64.0f),
