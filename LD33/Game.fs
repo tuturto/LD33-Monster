@@ -3,6 +3,7 @@
 open System
 open System.Diagnostics
 open System.Linq
+open System.Globalization
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Content
@@ -136,9 +137,16 @@ RxNA.Input.gameTimeStream
                                                                                                                                  newFire()
                                                                            else {fire with x = fire.x - fire.vx * fireSpeed}))) |> ignore
 
-scoreStream
-|> Observable.subscribe (fun x -> Debug.WriteLine x)
-|> ignore
+RxNA.Renderer.renderStream
+|> Observable.subscribe
+    (fun res ->
+        let score = List.ofArray <| scoreStream.Value.ToString(Globalization.CultureInfo.InvariantCulture).ToArray()
+        let foo = List.mapi (fun index (element:char) -> (index, element.ToString(Globalization.CultureInfo.InvariantCulture))) score
+        List.iter (fun item -> (match item with
+                                    | index, value -> res.spriteBatch.Draw(res.textures.Item value,
+                                                                           Vector2((float32)index*64.0f, 0.0f),
+                                                                           Color.White))) foo
+        ) |> ignore
 
 RxNA.Renderer.renderStream
 |> Observable.filter (fun x -> gameModeStream.Value = GameOn)
@@ -199,7 +207,17 @@ type Game () as this =
                                   .Add("flame_f1", contentManager.Load<Texture2D>("flame_f1"))
                                   .Add("flame_f2", contentManager.Load<Texture2D>("flame_f2"))
                                   .Add("flame_f3", contentManager.Load<Texture2D>("flame_f3"))
-                                  .Add("flame_f4", contentManager.Load<Texture2D>("flame_f4"));
+                                  .Add("flame_f4", contentManager.Load<Texture2D>("flame_f4"))
+                                  .Add("0", contentManager.Load<Texture2D>("0"))
+                                  .Add("1", contentManager.Load<Texture2D>("1"))
+                                  .Add("2", contentManager.Load<Texture2D>("2"))
+                                  .Add("3", contentManager.Load<Texture2D>("3"))
+                                  .Add("4", contentManager.Load<Texture2D>("4"))
+                                  .Add("5", contentManager.Load<Texture2D>("5"))
+                                  .Add("6", contentManager.Load<Texture2D>("6"))
+                                  .Add("7", contentManager.Load<Texture2D>("7"))
+                                  .Add("8", contentManager.Load<Texture2D>("8"))
+                                  .Add("9", contentManager.Load<Texture2D>("9"));
               gameTime = null }
  
     override this.Update (gameTime) =
