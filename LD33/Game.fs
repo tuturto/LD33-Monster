@@ -69,8 +69,7 @@ let torcherStream =
                                    {x=700.0f; y=464.0f; vx= 9.0f; vy=0.0f};
                                    {x=650.0f; y=464.0f; vx= 12.0f; vy=0.0f};
                                    {x=600.0f; y=464.0f; vx= 11.0f; vy=0.0f};
-                                   {x=800.0f; y=464.0f; vx= 10.0f; vy=0.0f};
-                                   {x=775.0f; y=464.0f; vx= 10.0f; vy=0.0f};])
+                                   {x=800.0f; y=464.0f; vx= 10.0f; vy=0.0f};])
 
 RxNA.Input.gameTimeStream
 |> Observable.subscribe (fun time ->
