@@ -38,6 +38,9 @@ let playerStream =
 let fireStream =
     new BehaviorSubject<Mob list>([])
 
+let scoreStream = 
+    new BehaviorSubject<int>(0)
+
 RxNA.Input.gameTimeStream
 |> Observable.subscribe (fun time ->
     let player = playerStream.Value
@@ -128,8 +131,14 @@ RxNA.Input.gameTimeStream
     (fun gameTime -> 
         let fireSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
         let player = playerStream.Value
-        fireStream.OnNext (fireStream.Value |> List.map (fun fire -> if isFirePastScreen fire || intersecting fire.x fire.y player.x player.y then newFire()
-                                                                        else {fire with x = fire.x - fire.vx * fireSpeed}))) |> ignore
+        fireStream.OnNext (fireStream.Value |> List.map (fun fire -> if isFirePastScreen fire then newFire()
+                                                                       else if intersecting fire.x fire.y player.x player.y then scoreStream.OnNext(scoreStream.Value + 1)
+                                                                                                                                 newFire()
+                                                                           else {fire with x = fire.x - fire.vx * fireSpeed}))) |> ignore
+
+scoreStream
+|> Observable.subscribe (fun x -> Debug.WriteLine x)
+|> ignore
 
 RxNA.Renderer.renderStream
 |> Observable.filter (fun x -> gameModeStream.Value = GameOn)
@@ -173,6 +182,7 @@ type Game () as this =
             (fun x -> match x with
                           | Keys.Escape -> this.Exit()
                           | Keys.Space -> playerStream.OnNext(initialPlayerState)
+                                          scoreStream.OnNext(0)
                                           gameModeStream.OnNext(GameOn)
                           | _ -> ()) |> ignore 
  
