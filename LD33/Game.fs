@@ -18,6 +18,7 @@ open RxNA.Input
 open RxNA.Renderer
 
 open Menu
+open Forest
 
 type Mob =
     { x: float32;
@@ -25,14 +26,6 @@ type Mob =
       vx: float32;
       vy: float32;
     }
-
-type Tree =
-    { texture: string;
-      x: float32;
-      vx: float32;
-      y: float32 }
-
-let R = System.Random()
 
 type PlayerState =
     | Invisible of int * Mob
@@ -57,11 +50,6 @@ let highScoreStream =
 
 let creditsStream =
     new BehaviorSubject<int>(3)
-
-let forestTextures = ["forest_1"; "forest_2"; "forest_3"; "forest_4"; "forest_5"; "forest_6"; "forest_7"; "forest_8"]
-
-let randomTextureName textures =
-    textures |> List.item (R.Next textures.Length)
 
 let initialTorchers = [{x=800.0f; y=464.0f; vx= 10.0f; vy=0.0f};
                        {x=750.0f; y=464.0f; vx= 11.0f; vy=0.0f};
@@ -174,28 +162,6 @@ RxNA.Input.gameTimeStream
                                                                                                                                        newFire()
                                                                            else {fire with x = fire.x - fire.vx * fireSpeed})))
 |> ignore
-
-let isTreePastScreen (tree:Tree) =
-    tree.x < -200.0f
-
-let newTree() =
-    { x = 800.0f;
-      y = 100.0f;
-      vx = 8.0f;
-      texture = randomTextureName forestTextures; }
-
-
-let forestStream = RxNA.Input.gameTimeStream
-                   |> Observable.scanInit
-                        [{x=0.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
-                         {x=200.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
-                         {x=400.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
-                         {x=600.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
-                         {x=800.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};]
-                        (fun state gameTime ->
-                            let forestSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
-                            state |> List.map (fun tree -> if isTreePastScreen tree then newTree()
-                                                              else {tree with x = tree.x - tree.vx * forestSpeed}))
 
 let newTorcher() = 
     { x = 864.0f + (float32)(R.NextDouble()) * 100.0f;

@@ -9,6 +9,8 @@ open System.Reactive.Linq
 
 open RxNA.Renderer
 
+let R = System.Random()
+
 type GameState =
     | MainMenuShown
     | GameOn
