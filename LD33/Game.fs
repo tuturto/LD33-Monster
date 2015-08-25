@@ -63,13 +63,6 @@ let forestTextures = ["forest_1"; "forest_2"; "forest_3"; "forest_4"; "forest_5"
 let randomTextureName textures =
     textures |> List.item (R.Next textures.Length)
 
-let forestStream =
-    new BehaviorSubject<Tree list>([{x=0.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
-                                    {x=200.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
-                                    {x=400.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
-                                    {x=600.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
-                                    {x=800.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};])
-
 let initialTorchers = [{x=800.0f; y=464.0f; vx= 10.0f; vy=0.0f};
                        {x=750.0f; y=464.0f; vx= 11.0f; vy=0.0f};
                        {x=700.0f; y=464.0f; vx= 9.0f; vy=0.0f};
@@ -191,13 +184,18 @@ let newTree() =
       vx = 8.0f;
       texture = randomTextureName forestTextures; }
 
-RxNA.Input.gameTimeStream
-|> Observable.subscribe
-    (fun gameTime ->
-        let forestSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
-        forestStream.OnNext (forestStream.Value |> List.map (fun tree -> if isTreePastScreen tree then newTree()
-                                                                            else {tree with x = tree.x - tree.vx * forestSpeed})))
-|> ignore
+
+let forestStream = RxNA.Input.gameTimeStream
+                   |> Observable.scanInit
+                        [{x=0.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
+                         {x=200.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
+                         {x=400.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
+                         {x=600.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};
+                         {x=800.0f; y=100.0f;vx=8.0f;texture=randomTextureName forestTextures};]
+                        (fun state gameTime ->
+                            let forestSpeed = (float32)gameTime.ElapsedGameTime.TotalSeconds * 7.5f
+                            state |> List.map (fun tree -> if isTreePastScreen tree then newTree()
+                                                              else {tree with x = tree.x - tree.vx * forestSpeed}))
 
 let newTorcher() = 
     { x = 864.0f + (float32)(R.NextDouble()) * 100.0f;
@@ -232,12 +230,18 @@ let gameOverRendering = RxNA.Renderer.renderStream
 let gameRendering = RxNA.Renderer.renderStream
                     |> Observable.filter (fun x -> gameModeStream.Value = GameOn || gameModeStream.Value = GameOver)
 
+let forestRendering = new BehaviorSubject<Tree list>([])
+
+forestStream
+|> Observable.subscribeObserver forestRendering
+|> ignore
+
 gameRendering
 |> Observable.subscribe
     (fun res ->
         List.iter (fun item -> res.spriteBatch.Draw(res.textures.Item item.texture ,
                                                     Vector2(item.x, item.y),
-                                                    Color.White)) forestStream.Value)
+                                                    Color.White)) forestRendering.Value)
 |> ignore
 
 RxNA.Renderer.renderStream
